@@ -1,0 +1,231 @@
+/* Screen layouts + chord cards + controls. */
+
+#app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+  min-height: 56px;
+}
+.topbar h1 { flex: 1; font-size: 17px; margin: 0; }
+.topbar button { min-height: 40px; padding: 6px 10px; }
+
+.tabbar {
+  display: flex;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+.tabbar button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 10px 4px 14px;
+  color: var(--fg-dim);
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 56px;
+}
+.tabbar button.active { color: var(--accent); }
+.tabbar .icon { font-size: 20px; line-height: 1; }
+
+.screen {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: none;
+}
+.screen.active { display: block; }
+
+/* Song list */
+.song-list { padding: 8px; }
+.song-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  background: var(--bg-elev);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+}
+.song-card .meta { flex: 1; min-width: 0; }
+.song-card .title { font-weight: 600; font-size: 16px; }
+.song-card .artist { font-size: 13px; color: var(--fg-dim); }
+.song-card .fav { font-size: 20px; color: var(--fg-dim); padding: 4px 8px; background: transparent; border: none; min-height: auto; }
+.song-card .fav.on { color: var(--accent); }
+
+.search-bar { padding: 8px 12px; }
+.empty-state { text-align: center; padding: 40px 20px; color: var(--fg-dim); }
+
+/* Player */
+.player-controls {
+  padding: 8px 12px;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.player-controls .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.player-controls .row > * { flex-shrink: 0; }
+.player-controls .row .grow { flex: 1; min-width: 100px; }
+.player-controls label { font-size: 12px; color: var(--fg-dim); }
+.player-controls .value { font-variant-numeric: tabular-nums; min-width: 36px; text-align: right; }
+
+.chord-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 12px;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+  scroll-snap-type: x mandatory;
+}
+.chord-card {
+  flex-shrink: 0;
+  background: var(--bg-elev-2);
+  padding: 4px;
+  border-radius: 6px;
+  scroll-snap-align: start;
+  width: 84px;
+  min-width: 84px;
+}
+.chord-card.highlight { box-shadow: 0 0 0 2px var(--accent); }
+.chord-diagram { width: 100%; height: 100px; }
+.chord-diagram .chord-name { fill: var(--fg); font-size: 11px; font-weight: 600; }
+.chord-diagram .chord-fret { stroke: var(--fg-dim); stroke-width: 0.5; }
+.chord-diagram .chord-string { stroke: var(--fg-dim); stroke-width: 0.5; }
+.chord-diagram .chord-nut { stroke: var(--fg); stroke-width: 2; }
+.chord-diagram .chord-dot { fill: var(--accent); }
+.chord-diagram .chord-mark { fill: var(--fg-dim); font-size: 10px; }
+.chord-diagram .chord-open { fill: none; stroke: var(--fg); stroke-width: 0.8; }
+.chord-diagram .chord-fret-label { fill: var(--fg-dim); font-size: 8px; }
+.chord-diagram .chord-unknown { fill: var(--fg-dim); font-size: 24px; }
+
+.lyrics {
+  padding: 16px 16px 60vh 16px;
+  font-size: 17px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  line-height: 1.9;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.lyrics .lyric-line { position: relative; padding: 12px 0 4px 0; min-height: 32px; }
+.lyrics .lyric-line .chords-track { position: absolute; top: 0; left: 0; right: 0; height: 18px; font-weight: 700; color: var(--accent); pointer-events: none; }
+.lyrics .lyric-line .chord-marker { position: absolute; font-size: 14px; }
+.lyrics .lyric-line .text-track { white-space: pre-wrap; word-break: break-word; }
+.lyrics .blank { height: 12px; }
+.lyrics .comment { color: var(--fg-dim); font-style: italic; padding: 4px 0; font-size: 14px; }
+.lyrics .section-label {
+  color: var(--accent-2);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding: 16px 0 4px 0;
+}
+.lyrics .lyric-line.loop-marker { background: rgba(255, 183, 77, 0.08); }
+.lyrics .lyric-line.loop-a::before {
+  content: 'A'; position: absolute; left: -16px; color: var(--accent); font-weight: 700;
+}
+.lyrics .lyric-line.loop-b::before {
+  content: 'B'; position: absolute; left: -16px; color: var(--accent); font-weight: 700;
+}
+
+/* Tuner */
+.tuner {
+  padding: 20px;
+  text-align: center;
+}
+.tuner .note {
+  font-size: 96px;
+  font-weight: 300;
+  margin: 20px 0;
+  font-variant-numeric: tabular-nums;
+}
+.tuner .octave { font-size: 24px; color: var(--fg-dim); vertical-align: super; }
+.tuner .cents-bar {
+  position: relative;
+  height: 40px;
+  background: var(--bg-elev);
+  border-radius: 20px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+.tuner .cents-bar .center-line {
+  position: absolute;
+  left: 50%; top: 0; bottom: 0;
+  width: 2px; background: var(--fg-dim);
+}
+.tuner .cents-bar .indicator {
+  position: absolute;
+  top: 4px; bottom: 4px;
+  width: 6px;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: left 0.1s ease-out, background 0.1s;
+}
+.tuner .cents-bar .indicator.in-tune { background: var(--ok); }
+.tuner .cents-label { color: var(--fg-dim); font-size: 14px; font-variant-numeric: tabular-nums; }
+
+.string-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 20px;
+}
+.string-buttons button { padding: 16px; font-size: 18px; }
+
+/* Metronome */
+.metronome { padding: 20px; text-align: center; }
+.metronome .bpm-display { font-size: 84px; font-weight: 300; font-variant-numeric: tabular-nums; }
+.metronome .beats {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 24px 0;
+}
+.metronome .beat {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--bg-elev);
+  border: 2px solid var(--border);
+  transition: background 0.1s, transform 0.1s;
+}
+.metronome .beat.active { background: var(--accent); transform: scale(1.2); }
+.metronome .beat.downbeat { border-color: var(--accent); }
+.metronome .controls { display: flex; flex-direction: column; gap: 12px; max-width: 360px; margin: 0 auto; }
+.metronome .row { display: flex; gap: 8px; align-items: center; }
+.metronome .row label { min-width: 80px; text-align: left; color: var(--fg-dim); font-size: 13px; }
+
+/* Edit */
+.edit-form { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.edit-form label { font-size: 13px; color: var(--fg-dim); }
+.edit-form .help { font-size: 12px; color: var(--fg-dim); padding: 8px; background: var(--bg-elev); border-radius: var(--radius); }
+.edit-form .help code { background: var(--bg-elev-2); padding: 1px 4px; border-radius: 3px; }
+.edit-form .actions { display: flex; gap: 8px; padding-top: 8px; }
+.edit-form .actions button { flex: 1; }
+
+/* Settings */
+.settings { padding: 12px; display: flex; flex-direction: column; gap: 16px; }
+.settings .group { background: var(--bg-elev); border-radius: var(--radius); padding: 12px; border: 1px solid var(--border); }
+.settings .group h3 { font-size: 14px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 1px; }
+.settings .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
