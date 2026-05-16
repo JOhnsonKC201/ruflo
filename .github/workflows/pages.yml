@@ -3,11 +3,18 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docs/**'
+      - 'apps/guitar-practice/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
 
 permissions:
+  contents: read
   pages: write
   id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -18,8 +25,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v4
-      - uses: actions/jekyll-build-pages@v1
+      - uses: actions/upload-pages-artifact@v3
         with:
-          source: ./docs
+          path: ./apps/guitar-practice
       - uses: actions/deploy-pages@v4
         id: deployment
