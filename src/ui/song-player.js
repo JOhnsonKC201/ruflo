@@ -56,13 +56,15 @@ export class SongPlayerView {
         </div>
       </div>
       <div class="chord-row"></div>
-      <div class="lyrics-container" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+      <div class="lyrics-container" style="flex:1 1 0;min-height:0;overflow-y:auto;">
         <div class="lyrics"></div>
       </div>
     `;
 
     this.root.style.display = 'none';
     this.root.style.flexDirection = 'column';
+    this.root.style.overflow = 'hidden';
+    this.root.style.minHeight = '0';
 
     this.chordRow = this.root.querySelector('.chord-row');
     this.lyricsContainer = this.root.querySelector('.lyrics-container');
