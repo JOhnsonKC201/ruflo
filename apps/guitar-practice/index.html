@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0e0f12" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Guitar" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Guitar Practice</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+  <link rel="icon" href="./assets/icon-192.png" />
+  <link rel="stylesheet" href="./styles/base.css" />
+  <link rel="stylesheet" href="./styles/components.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <button class="back-btn ghost hidden" aria-label="Back">‹ Back</button>
+      <h1>Guitar Practice</h1>
+      <button class="add-btn ghost" aria-label="Add song">+ Add</button>
+    </header>
+
+    <main style="flex:1;position:relative;overflow:hidden;">
+      <section id="screen-songs" class="screen active"></section>
+      <section id="screen-player" class="screen" style="display:none"></section>
+      <section id="screen-edit" class="screen"></section>
+      <section id="screen-tuner" class="screen"></section>
+      <section id="screen-metronome" class="screen"></section>
+      <section id="screen-settings" class="screen"></section>
+    </main>
+
+    <nav class="tabbar">
+      <button data-tab="songs"><span class="icon">♫</span>Songs</button>
+      <button data-tab="tuner"><span class="icon">🎚</span>Tuner</button>
+      <button data-tab="metronome"><span class="icon">𝅘𝅥</span>Metronome</button>
+      <button data-tab="settings"><span class="icon">⚙</span>Settings</button>
+    </nav>
+  </div>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
