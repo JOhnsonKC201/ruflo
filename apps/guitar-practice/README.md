@@ -4,19 +4,26 @@ A personal, offline-first PWA for guitar practice. Lyrics + chord diagrams + aut
 
 ## Install on iPhone (two paths, both free)
 
-### Path A: AirDrop the single file (zero infrastructure)
+### Path A: Download the prebuilt file (easiest, no tools needed)
 
-1. Build the single-file dist: `node tools/gen-icons.mjs && node tools/build-single-file.mjs`
-2. AirDrop `dist/guitar.html` from your Mac/PC to your iPhone (or email it to yourself, save to Files).
-3. On iPhone, open the file in **Safari** (long-press → "Open in Safari" if it opens in another app).
-4. Tap the Share button → **Add to Home Screen**.
-5. Launch from home screen — fullscreen app, no Safari chrome.
+A ready-to-use single-file build is checked into the repo at
+[`apps/guitar-practice/install/guitar.html`](./install/guitar.html).
 
-### Path B: GitHub Pages (always-on URL)
+1. On your iPhone, open Safari and go to:
+   `https://github.com/JOhnsonKC201/ruflo/raw/main/apps/guitar-practice/install/guitar.html`
+2. Safari will render the app directly. Tap the **Share** button → **Add to Home Screen** → **Add**.
+3. Launch from home screen — fullscreen, no Safari chrome, works offline.
 
-1. Push the `apps/guitar-practice/` directory to a GitHub repo.
-2. In repo Settings → Pages → enable Pages on the branch, source `/apps/guitar-practice` (or move files to repo root).
-3. Open the GitHub Pages URL in Safari on iPhone → Share → Add to Home Screen.
+### Path B: Build it yourself (latest sources)
+
+1. `node tools/gen-icons.mjs && node tools/build-single-file.mjs` from this directory.
+2. AirDrop `dist/guitar.html` from your computer to your iPhone (or email/iCloud Drive it).
+3. Open in **Safari**, then Share → Add to Home Screen.
+
+### Path C: GitHub Pages (always-on URL)
+
+1. Repo Settings → Pages → enable Pages on the `main` branch root.
+2. Open the resulting `https://johnsonkc201.github.io/ruflo/apps/guitar-practice/` URL in Safari → Add to Home Screen.
 
 ## Features
 
