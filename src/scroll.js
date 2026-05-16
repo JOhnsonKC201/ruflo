@@ -74,22 +74,26 @@ export class ScrollEngine {
   loop() {
     if (!this.running) return;
     const now = performance.now();
-    const dt = (now - this.lastTs) / 1000;
+    const dt = Math.min(0.1, (now - this.lastTs) / 1000); // clamp to handle tab-switch gaps
     this.lastTs = now;
 
     const speed = this.mode === 'bpm'
       ? this.bpm / 60 * this.linesPerBeat * this.lineHeightPx
       : this.pxPerSec;
 
+    const maxTop = Math.max(0, this.el.scrollHeight - this.el.clientHeight);
     let nextTop = this.el.scrollTop + speed * dt;
-    const maxTop = this.el.scrollHeight - this.el.clientHeight;
 
     if (this.loopAY != null && this.loopBY != null && nextTop >= this.loopBY) {
       nextTop = this.loopAY;
       if (this.rampCfg) this.handleRampLoop();
-    } else if (nextTop >= maxTop) {
-      this.pause();
+    } else if (maxTop > 0 && nextTop >= maxTop) {
+      // Only auto-pause when we've actually reached the end of real overflow.
       nextTop = maxTop;
+      this.pause();
+    } else if (maxTop === 0) {
+      // No overflow yet (layout still settling); keep running, no movement.
+      nextTop = 0;
     }
 
     this.el.scrollTop = nextTop;

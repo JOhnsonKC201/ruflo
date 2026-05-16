@@ -1,6 +1,6 @@
 // Cache-first service worker for app shell. Offline-first since everything's local.
 
-const CACHE = 'guitar-practice-v1';
+const CACHE = 'guitar-practice-v3';
 const SHELL = [
   './',
   './index.html',
@@ -47,11 +47,30 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  // Network-first for same-origin HTML/JS/CSS so code updates propagate.
+  // Cache-first for everything else (icons, fonts, third-party).
+  const isAppCode = url.origin === self.location.origin &&
+    /\.(html|js|mjs|css|json)$/.test(url.pathname);
+  if (isAppCode) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
       return fetch(req).then(res => {
-        if (res.ok && new URL(req.url).origin === self.location.origin) {
+        if (res.ok && url.origin === self.location.origin) {
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(req, clone));
         }
