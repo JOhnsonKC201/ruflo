@@ -65,36 +65,25 @@ function bundleModules() {
     rewritten[f] = src;
   }
 
-  // Build importmap entries: each file → blob URL
+  // Build importmap entries: each file → blob URL.
+  // Single pass in dependency order (leaves first): each file's imports can be
+  // rewritten using urlMap entries created for its already-processed dependencies.
   const blobScript = `
     (function() {
       const files = ${JSON.stringify(rewritten)};
-      const urlMap = {};
-      // Two-pass: create blob URLs, then rewrite cross-refs to those URLs
-      for (const path in files) urlMap[path] = '';
-      function urlFor(path) {
-        if (urlMap[path]) return urlMap[path];
-        let src = files[path];
-        src = src.replace(/from\\s+(['"])([^'"]+)\\1/g, (m, q, spec) => {
-          if (urlMap[spec]) return 'from ' + q + urlMap[spec] + q;
-          return m;
-        });
-        const blob = new Blob([src], { type: 'text/javascript' });
-        urlMap[path] = URL.createObjectURL(blob);
-        return urlMap[path];
-      }
-      // Build in dependency order (no deps first)
       const order = ${JSON.stringify(files)};
-      for (const f of order) urlFor(f);
-      // Re-create with cross-references resolved
+      const urlMap = {};
       for (const f of order) {
         let src = files[f];
         src = src.replace(/from\\s+(['"])([^'"]+)\\1/g, (m, q, spec) => {
           if (urlMap[spec]) return 'from ' + q + urlMap[spec] + q;
           return m;
         });
+        src = src.replace(/import\\s*\\(\\s*(['"])([^'"]+)\\1\\s*\\)/g, (m, q, spec) => {
+          if (urlMap[spec]) return 'import(' + q + urlMap[spec] + q + ')';
+          return m;
+        });
         const blob = new Blob([src], { type: 'text/javascript' });
-        URL.revokeObjectURL(urlMap[f]);
         urlMap[f] = URL.createObjectURL(blob);
       }
       // Boot the app entry
