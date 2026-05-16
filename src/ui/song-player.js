@@ -56,7 +56,7 @@ export class SongPlayerView {
         </div>
       </div>
       <div class="chord-row"></div>
-      <div class="lyrics-container" style="flex:1 1 0;min-height:0;overflow-y:auto;">
+      <div class="lyrics-container">
         <div class="lyrics"></div>
       </div>
     `;
@@ -190,15 +190,25 @@ export class SongPlayerView {
     el.appendChild(chordsTrack);
     el.appendChild(textTrack);
 
-    // Long-press to set loop A/B
+    // Long-press to set loop A/B. All listeners passive so iOS can scroll freely.
     let pressTimer = null;
-    const startPress = () => {
-      pressTimer = setTimeout(() => this.setLoopPoint(el), 600);
+    let startX = 0, startY = 0;
+    const startPress = (e) => {
+      const t = e.touches ? e.touches[0] : e;
+      startX = t.clientX; startY = t.clientY;
+      pressTimer = setTimeout(() => this.setLoopPoint(el), 700);
+    };
+    const cancelOnMove = (e) => {
+      const t = e.touches ? e.touches[0] : e;
+      if (!t) return;
+      if (Math.abs(t.clientX - startX) > 6 || Math.abs(t.clientY - startY) > 6) {
+        clearTimeout(pressTimer);
+      }
     };
     const cancelPress = () => clearTimeout(pressTimer);
     el.addEventListener('touchstart', startPress, { passive: true });
-    el.addEventListener('touchend', cancelPress);
-    el.addEventListener('touchmove', cancelPress);
+    el.addEventListener('touchend', cancelPress, { passive: true });
+    el.addEventListener('touchmove', cancelOnMove, { passive: true });
     el.addEventListener('mousedown', startPress);
     el.addEventListener('mouseup', cancelPress);
     el.addEventListener('mouseleave', cancelPress);
