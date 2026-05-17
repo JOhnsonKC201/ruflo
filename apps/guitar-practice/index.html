@@ -9,6 +9,30 @@
   <meta name="apple-mobile-web-app-title" content="Guitar" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>Guitar Practice</title>
+  <script>
+    // Cache-bust escape hatch. Visit /?reset=1 to fully unregister any old
+    // service worker and clear all caches, then reload clean. This runs
+    // synchronously before anything else so even the old (cache-first) SW's
+    // cache can't get in the way once this HTML is served — the URL has a
+    // query string the old SW didn't cache, so the network serves this fresh.
+    (function () {
+      if (location.search.indexOf('reset=') === -1) return;
+      var done = function () { location.replace(location.pathname); };
+      var step1 = function () {
+        if (!('serviceWorker' in navigator)) return done();
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          return Promise.all(regs.map(function (r) { return r.unregister(); }));
+        }).then(step2, step2);
+      };
+      var step2 = function () {
+        if (typeof caches === 'undefined') return done();
+        caches.keys().then(function (keys) {
+          return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+        }).then(done, done);
+      };
+      step1();
+    })();
+  </script>
   <link rel="manifest" href="./manifest.json" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="icon" href="./assets/icon-192.png" />
