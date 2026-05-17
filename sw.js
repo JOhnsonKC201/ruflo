@@ -1,6 +1,6 @@
 // Cache-first service worker for app shell. Offline-first since everything's local.
 
-const CACHE = 'guitar-practice-v4';
+const CACHE = 'guitar-practice-v5';
 const SHELL = [
   './',
   './index.html',
