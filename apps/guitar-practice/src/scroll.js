@@ -73,6 +73,11 @@ export class ScrollEngine {
     if (this.running) return;
     this.running = true;
     this.lastTs = performance.now();
+    // Sync internal float position with current real scroll, then accumulate
+    // sub-pixel deltas internally. Without this, e.g. 0.4 px/frame is lost
+    // because window.scrollY always reports rounded integers, so reading back
+    // each frame would reset accumulation.
+    this._currentY = getCurrentTop(this.el);
     this.loop();
   }
 
@@ -97,22 +102,23 @@ export class ScrollEngine {
       : this.pxPerSec;
 
     const maxTop = getMaxTop(this.el);
-    let nextTop = getCurrentTop(this.el) + speed * dt;
+    // If the user manually scrolled, snap the internal accumulator to the
+    // visible position so we resume from where they are.
+    const visibleTop = getCurrentTop(this.el);
+    if (Math.abs(visibleTop - this._currentY) > 2) this._currentY = visibleTop;
 
-    if (this.loopAY != null && this.loopBY != null && nextTop >= this.loopBY) {
-      nextTop = this.loopAY;
+    this._currentY += speed * dt;
+
+    if (this.loopAY != null && this.loopBY != null && this._currentY >= this.loopBY) {
+      this._currentY = this.loopAY;
       if (this.rampCfg) this.handleRampLoop();
-    } else if (maxTop > 0 && nextTop >= maxTop) {
-      // Only auto-pause when we've actually reached the end of real overflow.
-      nextTop = maxTop;
+    } else if (maxTop > 0 && this._currentY >= maxTop) {
+      this._currentY = maxTop;
       this.pause();
-    } else if (maxTop === 0) {
-      // No overflow yet (layout still settling); keep running, no movement.
-      nextTop = 0;
     }
 
-    setCurrentTop(this.el, nextTop);
-    if (this.onTick) this.onTick(nextTop);
+    setCurrentTop(this.el, this._currentY);
+    if (this.onTick) this.onTick(this._currentY);
     this.rafId = requestAnimationFrame(() => this.loop());
   }
 
