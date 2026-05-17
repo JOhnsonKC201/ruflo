@@ -1,10 +1,10 @@
 /* Screen layouts + chord cards + controls. */
 
+/* Body-scroll layout: page scrolls natively, topbar is sticky, tabbar is fixed-bottom. */
 #app {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
+  display: block;
+  min-height: 100vh;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
 }
 
 .topbar {
@@ -18,7 +18,9 @@
   border-bottom: 1px solid var(--border);
   background: var(--bg-elev);
   min-height: 56px;
-  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 30;
 }
 .topbar h1 { flex: 1; font-size: 17px; margin: 0; }
 .topbar button { min-height: 40px; padding: 6px 10px; }
@@ -30,7 +32,9 @@
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  flex-shrink: 0;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 30;
 }
 .tabbar button {
   flex: 1;
@@ -49,13 +53,9 @@
 .tabbar button.active { color: var(--accent); }
 .tabbar .icon { font-size: 20px; line-height: 1; }
 
-.screen {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  display: none;
-}
+.screen { display: none; }
 .screen.active { display: block; }
+main { display: block; }
 
 /* Song list */
 .song-list { padding: 8px; }
@@ -139,12 +139,7 @@
   -webkit-user-select: none;
 }
 .lyrics-container {
-  min-height: 0;
-  height: 100%;
-  overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  position: relative;
+  /* No overflow; body scrolls. */
 }
 .lyrics .lyric-line { position: relative; padding: 12px 0 4px 0; min-height: 32px; }
 .lyrics .lyric-line .chords-track { position: absolute; top: 0; left: 0; right: 0; height: 18px; font-weight: 700; color: var(--accent); pointer-events: none; }

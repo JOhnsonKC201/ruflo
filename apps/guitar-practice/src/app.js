@@ -74,6 +74,7 @@ function switchTo(name) {
   const screenEl = document.getElementById(`screen-${name}`);
   if (screenEl) screenEl.classList.add('active');
   if (name === 'player') screens.player.show();
+  window.scrollTo(0, 0);
 
   Object.values(tabs).forEach(b => b.classList.remove('active'));
   if (tabs[name]) tabs[name].classList.add('active');

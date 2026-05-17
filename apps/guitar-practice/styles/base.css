@@ -1,7 +1,8 @@
 /* Reset + theme tokens + iOS safe-area handling. */
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+html, body { margin: 0; padding: 0; }
+html { height: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   background: var(--bg);
@@ -9,8 +10,8 @@ body {
   font-size: 16px;
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
-  overscroll-behavior: none;
-  touch-action: manipulation;
+  overscroll-behavior-y: none;
+  min-height: 100%;
 }
 
 :root {

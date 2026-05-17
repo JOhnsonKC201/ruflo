@@ -62,10 +62,6 @@ export class SongPlayerView {
     `;
 
     this.root.style.display = 'none';
-    this.root.style.gridTemplateRows = 'auto auto 1fr';
-    this.root.style.overflow = 'hidden';
-    this.root.style.minHeight = '0';
-    this.root.dataset.playerLayout = 'grid';
 
     this.chordRow = this.root.querySelector('.chord-row');
     this.lyricsContainer = this.root.querySelector('.lyrics-container');
@@ -73,7 +69,7 @@ export class SongPlayerView {
     this.bindControls();
   }
 
-  show() { this.root.style.display = 'grid'; }
+  show() { this.root.style.display = 'block'; }
   hide() { this.root.style.display = 'none'; this.stopAll(); }
 
   bindControls() {
@@ -111,11 +107,13 @@ export class SongPlayerView {
     this.renderChords();
     this.renderLyrics();
     this.setupScrollEngine();
+    window.scrollTo(0, 0);
     await this.requestWakeLock();
   }
 
   setupScrollEngine() {
-    this.scrollEngine = new ScrollEngine(this.lyricsContainer);
+    // null → engine scrolls the document/window (body-scroll layout).
+    this.scrollEngine = new ScrollEngine(null);
     this.scrollEngine.setMode(this.scrollMode);
     const bpm = parseInt(this.root.querySelector('.bpm-display').textContent, 10) || 100;
     this.scrollEngine.setBpm(bpm);
@@ -227,12 +225,15 @@ export class SongPlayerView {
   }
 
   setLoopPoint(el) {
+    // Compute Y position relative to the document since scroll is on window.
+    const rect = el.getBoundingClientRect();
+    const top = rect.top + window.scrollY;
     if (this.loopA == null) {
-      this.loopA = el.offsetTop;
+      this.loopA = top;
       el.classList.add('loop-marker', 'loop-a');
       this.root.querySelector('.loop-status').textContent = 'A set, long-press for B';
     } else if (this.loopB == null) {
-      this.loopB = el.offsetTop + el.offsetHeight;
+      this.loopB = top + rect.height;
       el.classList.add('loop-marker', 'loop-b');
       this.scrollEngine?.setLoop(this.loopA, this.loopB);
       this.root.querySelector('.loop-status').textContent = 'Looping A↔B';
