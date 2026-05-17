@@ -62,9 +62,10 @@ export class SongPlayerView {
     `;
 
     this.root.style.display = 'none';
-    this.root.style.flexDirection = 'column';
+    this.root.style.gridTemplateRows = 'auto auto 1fr';
     this.root.style.overflow = 'hidden';
     this.root.style.minHeight = '0';
+    this.root.dataset.playerLayout = 'grid';
 
     this.chordRow = this.root.querySelector('.chord-row');
     this.lyricsContainer = this.root.querySelector('.lyrics-container');
@@ -72,7 +73,7 @@ export class SongPlayerView {
     this.bindControls();
   }
 
-  show() { this.root.style.display = 'flex'; }
+  show() { this.root.style.display = 'grid'; }
   hide() { this.root.style.display = 'none'; this.stopAll(); }
 
   bindControls() {
