@@ -1,9 +1,24 @@
 // Scroll engine with two modes: BPM-synced (lines per beat) and manual px/s.
 // Supports loop A/B and speed-ramp.
 
+// scrollEl may be null/undefined → engine scrolls the document/window instead.
+function getCurrentTop(el) {
+  if (el) return el.scrollTop;
+  return window.scrollY || document.documentElement.scrollTop || 0;
+}
+function setCurrentTop(el, top) {
+  if (el) { el.scrollTop = top; return; }
+  window.scrollTo(0, top);
+}
+function getMaxTop(el) {
+  if (el) return Math.max(0, el.scrollHeight - el.clientHeight);
+  const doc = document.documentElement;
+  return Math.max(0, doc.scrollHeight - window.innerHeight);
+}
+
 export class ScrollEngine {
   constructor(scrollEl) {
-    this.el = scrollEl;
+    this.el = scrollEl || null;
     this.mode = 'pxps'; // 'pxps' | 'bpm'
     this.pxPerSec = 30;
     this.bpm = 100;
@@ -81,8 +96,8 @@ export class ScrollEngine {
       ? this.bpm / 60 * this.linesPerBeat * this.lineHeightPx
       : this.pxPerSec;
 
-    const maxTop = Math.max(0, this.el.scrollHeight - this.el.clientHeight);
-    let nextTop = this.el.scrollTop + speed * dt;
+    const maxTop = getMaxTop(this.el);
+    let nextTop = getCurrentTop(this.el) + speed * dt;
 
     if (this.loopAY != null && this.loopBY != null && nextTop >= this.loopBY) {
       nextTop = this.loopAY;
@@ -96,7 +111,7 @@ export class ScrollEngine {
       nextTop = 0;
     }
 
-    this.el.scrollTop = nextTop;
+    setCurrentTop(this.el, nextTop);
     if (this.onTick) this.onTick(nextTop);
     this.rafId = requestAnimationFrame(() => this.loop());
   }
