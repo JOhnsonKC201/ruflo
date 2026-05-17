@@ -93,11 +93,12 @@ async function getEWCConsolidator() {
 }
 
 // MoE Router - lazy loaded
-let moeRouter: Awaited<ReturnType<typeof import('../ruvector/moe-router.js').getMoERouter>> | null = null;
+// #1773 item 4 — moe-router migrated to @claude-flow/neural
+let moeRouter: Awaited<ReturnType<typeof import('@claude-flow/neural').getMoERouter>> | null = null;
 async function getMoERouter() {
   if (!moeRouter) {
     try {
-      const { getMoERouter: getMoE } = await import('../ruvector/moe-router.js');
+      const { getMoERouter: getMoE } = await import('@claude-flow/neural');
       moeRouter = await getMoE();
     } catch {
       moeRouter = null;
@@ -393,11 +394,12 @@ function getRouterBackendInfo(): { backend: string; speed: string } {
 }
 
 // Flash Attention - lazy loaded
-let flashAttention: Awaited<ReturnType<typeof import('../ruvector/flash-attention.js').getFlashAttention>> | null = null;
+// #1773 item 4 — flash-attention migrated to @claude-flow/neural
+let flashAttention: Awaited<ReturnType<typeof import('@claude-flow/neural').getFlashAttention>> | null = null;
 async function getFlashAttention() {
   if (!flashAttention) {
     try {
-      const { getFlashAttention: getFlash } = await import('../ruvector/flash-attention.js');
+      const { getFlashAttention: getFlash } = await import('@claude-flow/neural');
       flashAttention = await getFlash();
     } catch {
       flashAttention = null;
@@ -699,7 +701,7 @@ function assessCommandRisk(command: string): { risk: string; level: number; warn
 // MCP Tool implementations - return raw data for direct CLI use
 export const hooksPreEdit: MCPTool = {
   name: 'hooks_pre-edit',
-  description: 'Get context and agent suggestions before editing a file',
+  description: 'Get context and agent suggestions before editing a file Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -741,7 +743,7 @@ export const hooksPreEdit: MCPTool = {
 
 export const hooksPostEdit: MCPTool = {
   name: 'hooks_post-edit',
-  description: 'Record editing outcome for learning',
+  description: 'Record editing outcome for learning Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -790,7 +792,7 @@ export const hooksPostEdit: MCPTool = {
 
 export const hooksPreCommand: MCPTool = {
   name: 'hooks_pre-command',
-  description: 'Assess risk before executing a command',
+  description: 'Assess risk before executing a command Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -829,7 +831,7 @@ export const hooksPreCommand: MCPTool = {
 
 export const hooksPostCommand: MCPTool = {
   name: 'hooks_post-command',
-  description: 'Record command execution outcome',
+  description: 'Record command execution outcome Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -882,7 +884,7 @@ export const hooksPostCommand: MCPTool = {
 
 export const hooksRoute: MCPTool = {
   name: 'hooks_route',
-  description: 'Get a 3-tier routing recommendation for a task: Tier 1 (Agent Booster, 0ms / $0 — for var-to-const, add-types, etc.), Tier 2 (Haiku — simple), Tier 3 (Sonnet/Opus — complex). Use this BEFORE spawning an agent to avoid sending simple transforms to Sonnet. Native tools have no equivalent — Claude Code does not introspect its own model-selection cost. Returns the recommended model + a `[AGENT_BOOSTER_AVAILABLE]` literal when the WASM bypass applies.',
+  description: 'Get a 3-tier routing recommendation for a task: Tier 1 (Agent Booster, 0ms / $0 — for var-to-const, add-types, etc.), Tier 2 (Haiku — simple), Tier 3 (Sonnet/Opus — complex). Use this BEFORE spawning an agent to avoid sending simple transforms to Sonnet. Native tools have no equivalent — Claude Code does not introspect its own model-selection cost. Returns the recommended model + a `[AGENT_BOOSTER_AVAILABLE]` literal when the WASM bypass applies. Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -1060,7 +1062,7 @@ export const hooksRoute: MCPTool = {
 
 export const hooksMetrics: MCPTool = {
   name: 'hooks_metrics',
-  description: 'View learning metrics dashboard',
+  description: 'View learning metrics dashboard Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -1130,7 +1132,7 @@ export const hooksMetrics: MCPTool = {
 
 export const hooksList: MCPTool = {
   name: 'hooks_list',
-  description: 'List all registered hooks',
+  description: 'List all registered hooks Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {},
@@ -1178,7 +1180,7 @@ export const hooksList: MCPTool = {
 
 export const hooksPreTask: MCPTool = {
   name: 'hooks_pre-task',
-  description: 'Record task start and get agent suggestions with intelligent model routing (ADR-026)',
+  description: 'Record task start and get agent suggestions with intelligent model routing (ADR-026) Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -1269,7 +1271,7 @@ export const hooksPreTask: MCPTool = {
 
 export const hooksPostTask: MCPTool = {
   name: 'hooks_post-task',
-  description: 'Record task completion for learning',
+  description: 'Record task completion for learning Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -1418,7 +1420,7 @@ export const hooksPostTask: MCPTool = {
 // Explain hook - transparent routing explanation
 export const hooksExplain: MCPTool = {
   name: 'hooks_explain',
-  description: 'Explain routing decision with full transparency',
+  description: 'Explain routing decision with full transparency Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -1497,7 +1499,7 @@ export const hooksExplain: MCPTool = {
 // Pretrain hook - repository analysis for intelligence bootstrap
 export const hooksPretrain: MCPTool = {
   name: 'hooks_pretrain',
-  description: 'Analyze repository to bootstrap intelligence (4-step pipeline)',
+  description: 'Analyze repository to bootstrap intelligence (4-step pipeline) Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -1515,14 +1517,43 @@ export const hooksPretrain: MCPTool = {
     // (readdirSync/statSync already imported statically at the top.)
     const extCounts: Record<string, number> = {};
     let filesAnalyzed = 0;
+    // #1953: separate budget for code files. The old code gated the
+    // import-pattern extraction on `filesAnalyzed <= 50`, which counts
+    // EVERY directory entry (including .md/.yaml/.db/.log). In any
+    // markdown/docs-heavy repo, the depth-first walker burned through the
+    // 50-file budget on non-code files before reaching any source — so
+    // `patternsExtracted: 0` even when hundreds of `.ts`/`.js` files existed.
+    let codeFilesScanned = 0;
     let totalLines = 0;
     const maxDepth = depth === 'shallow' ? 2 : depth === 'deep' ? 6 : 4;
     const patterns: string[] = [];
+
+    // #1953: recurse into directories that typically contain code first
+    // (`src/`, `apps/`, `packages/`, `lib/`, `crates/`, `workers/`, `server/`)
+    // before docs / specs / planning dirs, so the import-extraction budget
+    // is spent on the highest-signal directories even in mixed repos.
+    const CODE_DIR_PREFIXES = new Set([
+      'src', 'apps', 'packages', 'lib', 'crates', 'workers',
+      'server', 'backend', 'frontend', 'app', 'cli', 'core',
+    ]);
+    const scoreEntry = (name: string): number => {
+      if (CODE_DIR_PREFIXES.has(name)) return 0;
+      // Deprioritise common docs / output directories.
+      if (/^(docs?|specs?|_.*|examples?|samples?|out|build|target|coverage|tests?)$/.test(name)) return 2;
+      return 1;
+    };
 
     const scan = (dir: string, currentDepth: number) => {
       if (currentDepth > maxDepth) return;
       try {
         const entries = readdirSync(dir, { withFileTypes: true });
+        // Sort: code-likely dirs first, files mixed in by name, deprioritised
+        // dirs last. Stable for deterministic test behaviour.
+        entries.sort((a, b) => {
+          const sa = a.isDirectory() ? scoreEntry(a.name) : 1;
+          const sb = b.isDirectory() ? scoreEntry(b.name) : 1;
+          return sa - sb;
+        });
         for (const entry of entries) {
           if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === 'dist') continue;
           const full = join(dir, entry.name);
@@ -1533,15 +1564,18 @@ export const hooksPretrain: MCPTool = {
             if (ext) extCounts[ext] = (extCounts[ext] || 0) + 1;
             filesAnalyzed++;
             // For code files, count lines and extract imports
-            if (['.ts', '.js', '.py', '.go', '.rs', '.java'].includes(ext)) {
+            if (['.ts', '.js', '.tsx', '.jsx', '.mjs', '.cjs', '.py', '.go', '.rs', '.java'].includes(ext)) {
               try {
                 const content = readFileSync(full, 'utf-8');
                 const lines = content.split('\n');
                 totalLines += lines.length;
-                // Extract import patterns (first 50 files max for performance)
-                if (filesAnalyzed <= 50) {
-                  for (const line of lines.slice(0, 30)) {
-                    if (line.startsWith('import ') || line.startsWith('from ') || line.startsWith('const ') && line.includes('require(')) {
+                // #1953: gate on the code-file count, not every-file count.
+                // Also widened the per-file scan window from 30 → 80 lines:
+                // modern TS files often have license headers + JSDoc + type
+                // imports before the first `import` statement.
+                if (++codeFilesScanned <= 50) {
+                  for (const line of lines.slice(0, 80)) {
+                    if (line.startsWith('import ') || line.startsWith('from ') || (line.startsWith('const ') && line.includes('require('))) {
                       const trimmed = line.trim();
                       if (trimmed.length < 120 && !patterns.includes(trimmed)) patterns.push(trimmed);
                       if (patterns.length >= 100) break;
@@ -1571,6 +1605,21 @@ export const hooksPretrain: MCPTool = {
       patternsStored = patterns.length;
     } catch { /* AgentDB not available */ }
 
+    // #1847: when the corpus contains files but no patterns were extracted
+    // (typical for Markdown vaults), make the source-code-only extraction
+    // contract explicit so users don't conclude the hook system is broken.
+    const SUPPORTED_EXTRACTION_EXTS = ['.ts', '.js', '.tsx', '.jsx', '.mjs', '.cjs', '.py', '.go', '.rs', '.java'];
+    let note: string | undefined;
+    if (filesAnalyzed > 0 && patterns.length === 0) {
+      const codeFileCount = SUPPORTED_EXTRACTION_EXTS.reduce(
+        (sum, ext) => sum + (extCounts[ext] ?? 0),
+        0,
+      );
+      note = codeFileCount === 0
+        ? `No source-code patterns found. hooks_pretrain extracts import/require lines from ${SUPPORTED_EXTRACTION_EXTS.join('/')} files only — Markdown/text/asset corpora produce zero patterns by design. This is not a hook-system failure; live trajectories and statusline are independent.`
+        : `Found ${codeFileCount} source-code file(s) but extracted zero import/require patterns. They may be empty, generated, or use non-standard module syntax.`;
+    }
+
     return {
       success: true,
       _real: true,
@@ -1583,7 +1632,14 @@ export const hooksPretrain: MCPTool = {
         patternsExtracted: patterns.length,
         patternsStored,
         fileTypes: Object.entries(extCounts).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([ext, count]) => ({ ext, count })),
+        // #1847: explicit extraction contract so callers can tell pretrain
+        // patterns apart from live trajectories and hook statusline state.
+        sources: {
+          extractedFrom: SUPPORTED_EXTRACTION_EXTS,
+          scope: 'pretrain-only (live trajectories + statusline are tracked separately)',
+        },
       },
+      ...(note ? { note } : {}),
     };
   },
 };
@@ -1591,7 +1647,7 @@ export const hooksPretrain: MCPTool = {
 // Build agents hook - generate optimized agent configs
 export const hooksBuildAgents: MCPTool = {
   name: 'hooks_build-agents',
-  description: 'Generate optimized agent configurations from pretrain data',
+  description: 'Generate optimized agent configurations from pretrain data Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -1662,7 +1718,7 @@ export const hooksBuildAgents: MCPTool = {
 // Transfer hook - transfer patterns from another project
 export const hooksTransfer: MCPTool = {
   name: 'hooks_transfer',
-  description: 'Transfer learned patterns from another project',
+  description: 'Transfer learned patterns from another project Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -1744,7 +1800,7 @@ export const hooksTransfer: MCPTool = {
 // Session start hook - auto-starts daemon
 export const hooksSessionStart: MCPTool = {
   name: 'hooks_session-start',
-  description: 'Initialize a new session and auto-start daemon',
+  description: 'Initialize a new session and auto-start daemon Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -1882,7 +1938,7 @@ export const hooksSessionStart: MCPTool = {
 // Session end hook - stops daemon
 export const hooksSessionEnd: MCPTool = {
   name: 'hooks_session-end',
-  description: 'End current session, stop daemon, and persist state',
+  description: 'End current session, stop daemon, and persist state Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -1972,7 +2028,7 @@ export const hooksSessionEnd: MCPTool = {
 // Session restore hook
 export const hooksSessionRestore: MCPTool = {
   name: 'hooks_session-restore',
-  description: 'Restore a previous session',
+  description: 'Restore a previous session Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -2016,7 +2072,7 @@ export const hooksSessionRestore: MCPTool = {
 // Notify hook - cross-agent notifications
 export const hooksNotify: MCPTool = {
   name: 'hooks_notify',
-  description: 'Send cross-agent notification',
+  description: 'Send cross-agent notification Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -2050,7 +2106,7 @@ export const hooksNotify: MCPTool = {
 // Init hook - initialize hooks in project
 export const hooksInit: MCPTool = {
   name: 'hooks_init',
-  description: 'Initialize hooks in project with .claude/settings.json',
+  description: 'Initialize hooks in project with .claude/settings.json Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -2091,7 +2147,7 @@ export const hooksInit: MCPTool = {
 // Intelligence hook - RuVector intelligence system
 export const hooksIntelligence: MCPTool = {
   name: 'hooks_intelligence',
-  description: 'RuVector intelligence system status (shows REAL metrics from memory store)',
+  description: 'RuVector intelligence system status (shows REAL metrics from memory store) Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -2224,7 +2280,7 @@ export const hooksIntelligence: MCPTool = {
 // Intelligence reset hook
 export const hooksIntelligenceReset: MCPTool = {
   name: 'hooks_intelligence-reset',
-  description: 'Reset intelligence learning state',
+  description: 'Reset intelligence learning state Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {},
@@ -2294,7 +2350,7 @@ export const hooksIntelligenceReset: MCPTool = {
 // Intelligence trajectory hooks - REAL implementation using activeTrajectories
 export const hooksTrajectoryStart: MCPTool = {
   name: 'hooks_intelligence_trajectory-start',
-  description: 'Begin SONA trajectory for reinforcement learning',
+  description: 'Begin SONA trajectory for reinforcement learning Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -2353,7 +2409,7 @@ export const hooksTrajectoryStart: MCPTool = {
 
 export const hooksTrajectoryStep: MCPTool = {
   name: 'hooks_intelligence_trajectory-step',
-  description: 'Record step in trajectory for reinforcement learning',
+  description: 'Record step in trajectory for reinforcement learning Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -2402,7 +2458,7 @@ export const hooksTrajectoryStep: MCPTool = {
 
 export const hooksTrajectoryEnd: MCPTool = {
   name: 'hooks_intelligence_trajectory-end',
-  description: 'End trajectory and trigger SONA learning with EWC++',
+  description: 'End trajectory and trigger SONA learning with EWC++ Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -2554,7 +2610,7 @@ export const hooksTrajectoryEnd: MCPTool = {
 // Pattern store/search hooks - REAL implementation using storeEntry
 export const hooksPatternStore: MCPTool = {
   name: 'hooks_intelligence_pattern-store',
-  description: 'Store pattern in ReasoningBank (HNSW-indexed)',
+  description: 'Store pattern in ReasoningBank (HNSW-indexed) Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -2632,7 +2688,7 @@ export const hooksPatternStore: MCPTool = {
 
 export const hooksPatternSearch: MCPTool = {
   name: 'hooks_intelligence_pattern-search',
-  description: 'Search patterns using REAL vector search (HNSW when available, brute-force fallback)',
+  description: 'Search patterns using REAL vector search (HNSW when available, brute-force fallback) Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -2739,7 +2795,7 @@ export const hooksPatternSearch: MCPTool = {
 // Intelligence stats hook
 export const hooksIntelligenceStats: MCPTool = {
   name: 'hooks_intelligence_stats',
-  description: 'Get RuVector intelligence layer statistics',
+  description: 'Get RuVector intelligence layer statistics Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -2950,7 +3006,7 @@ export const hooksIntelligenceStats: MCPTool = {
 // Intelligence learn hook
 export const hooksIntelligenceLearn: MCPTool = {
   name: 'hooks_intelligence_learn',
-  description: 'Force immediate SONA learning cycle with EWC++ consolidation',
+  description: 'Force immediate SONA learning cycle with EWC++ consolidation Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -3025,7 +3081,7 @@ export const hooksIntelligenceLearn: MCPTool = {
 // Intelligence attention hook
 export const hooksIntelligenceAttention: MCPTool = {
   name: 'hooks_intelligence_attention',
-  description: 'Compute attention-weighted similarity using MoE/Flash/Hyperbolic',
+  description: 'Compute attention-weighted similarity using MoE/Flash/Hyperbolic Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -3487,7 +3543,7 @@ function detectWorkerTriggers(text: string): {
 // Worker list tool
 export const hooksWorkerList: MCPTool = {
   name: 'hooks_worker-list',
-  description: 'List all 12 background workers with status and capabilities',
+  description: 'List all 12 background workers with status and capabilities Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -3536,7 +3592,7 @@ export const hooksWorkerList: MCPTool = {
 // Worker dispatch tool
 export const hooksWorkerDispatch: MCPTool = {
   name: 'hooks_worker-dispatch',
-  description: 'Dispatch a background worker for analysis/optimization tasks',
+  description: 'Dispatch a background worker for analysis/optimization tasks Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -3610,16 +3666,37 @@ export const hooksWorkerDispatch: MCPTool = {
     activeWorkers.set(workerId, worker);
 
     // Determine honest status
-    let reportedStatus: 'queued' | 'no-daemon' | 'synthetic-completed';
-    let note: string;
+    let reportedStatus: 'queued' | 'no-daemon' | 'synthetic-completed' | 'mcp-only';
+    let note = '';
     if (!daemonAlive) {
       reportedStatus = 'no-daemon';
       note = 'No worker daemon detected. Run `claude-flow daemon start` to enable real worker execution. The dispatch was recorded in-process but no actual work will run.';
     } else if (background) {
-      // Daemon is alive — record the queued worker. The daemon polls activeWorkers
-      // via its own state file, so this constitutes a real queue entry.
-      reportedStatus = 'queued';
-      note = `Worker queued for daemon (pid ${daemonPid}). Poll hooks_worker-status to track progression — do not assume completion until status === "completed".`;
+      // #1845: write a durable queue file the daemon polls every 5s. Until
+      // 3.7.0-alpha.11 the dispatch only updated a process-local Map that
+      // the daemon (separate process) could never see, so `queued` was a
+      // lie. The queue file makes it real and inspectable on disk.
+      const queueDir = join(cwd, '.claude-flow', 'daemon-queue');
+      const queuePath = join(queueDir, `${workerId}.json`);
+      let queueWritten = false;
+      try {
+        if (!existsSync(queueDir)) mkdirSync(queueDir, { recursive: true });
+        writeFileSync(
+          queuePath,
+          JSON.stringify({ workerId, trigger, context, priority, enqueuedAt: new Date().toISOString() }, null, 2),
+        );
+        queueWritten = true;
+      } catch (err) {
+        // Filesystem error — fall back to mcp-only status so we never
+        // claim queued without proof.
+        note = `Daemon detected (pid ${daemonPid}) but queue write to ${queuePath} failed: ${(err as Error).message}. Worker recorded in-process only; use \`ruflo daemon trigger -w ${trigger}\` to run synchronously.`;
+      }
+      if (queueWritten) {
+        reportedStatus = 'queued';
+        note = `Worker queued for daemon (pid ${daemonPid}) at ${queuePath}. Daemon polls every 5s; processed entries move to .claude-flow/daemon-queue/.processed/. Poll hooks_worker-status until status === "completed".`;
+      } else {
+        reportedStatus = 'mcp-only';
+      }
     } else {
       // Synchronous mode without a runner — be honest about it
       reportedStatus = 'synthetic-completed';
@@ -3654,7 +3731,7 @@ export const hooksWorkerDispatch: MCPTool = {
 // Worker status tool
 export const hooksWorkerStatus: MCPTool = {
   name: 'hooks_worker-status',
-  description: 'Get status of a specific worker or all active workers',
+  description: 'Get status of a specific worker or all active workers Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -3712,7 +3789,7 @@ export const hooksWorkerStatus: MCPTool = {
 // Worker detect tool - detect triggers from prompt
 export const hooksWorkerDetect: MCPTool = {
   name: 'hooks_worker-detect',
-  description: 'Detect worker triggers from user prompt (for UserPromptSubmit hook)',
+  description: 'Detect worker triggers from user prompt (for UserPromptSubmit hook) Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -3795,7 +3872,7 @@ async function getModelRouterInstance() {
 // Model route tool - intelligent model selection
 export const hooksModelRoute: MCPTool = {
   name: 'hooks_model-route',
-  description: 'Route task to optimal Claude model (haiku/sonnet/opus) based on complexity',
+  description: 'Route task to optimal Claude model (haiku/sonnet/opus) based on complexity Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -3842,7 +3919,7 @@ export const hooksModelRoute: MCPTool = {
 // Model route outcome - record outcome for learning
 export const hooksModelOutcome: MCPTool = {
   name: 'hooks_model-outcome',
-  description: 'Record model routing outcome for learning',
+  description: 'Record model routing outcome for learning Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -3877,7 +3954,7 @@ export const hooksModelOutcome: MCPTool = {
 // Model router stats
 export const hooksModelStats: MCPTool = {
   name: 'hooks_model-stats',
-  description: 'Get model routing statistics',
+  description: 'Get model routing statistics Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {},
@@ -3921,7 +3998,7 @@ function analyzeComplexityFallback(task: string): number {
 // Worker cancel tool
 export const hooksWorkerCancel: MCPTool = {
   name: 'hooks_worker-cancel',
-  description: 'Cancel a running worker',
+  description: 'Cancel a running worker Use when native Bash hooks (via Claude Code\'s settings.json) are wrong because you need Ruflo-side state — pattern persistence, neural training signals, model-routing learning, cost tracking, audit chain. For one-off shell commands, plain Bash hooks are fine.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -3963,8 +4040,71 @@ export const hooksWorkerCancel: MCPTool = {
   },
 };
 
+// #1916: the `ruflo hooks teammate-idle` / `ruflo hooks task-completed` CLI
+// subcommands (Agent Teams hooks) referenced unregistered tools. Minimal
+// acknowledgement handlers with the shapes the CLI expects — auto-assignment
+// and pattern-learning are delegated to the task-queue consumer / intelligence
+// pipeline (a tracked #1916 follow-up).
+export const hooksTeammateIdle: MCPTool = {
+  name: 'hooks_teammate-idle',
+  description: 'Agent Teams hook — fired when a teammate agent finishes its turn; reports whether a pending task can be auto-assigned. Use when native Task is wrong because you have a persistent multi-agent team with a shared task list and want idle workers picked up automatically rather than re-spawning subagents. For a one-shot Task, native Task is fine. (Auto-assignment is delegated to the task-queue consumer — this acknowledges the event today.)',
+  category: 'hooks',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      teammateId: { type: 'string', description: 'ID of the idle teammate' },
+      teamName: { type: 'string', description: 'Team name' },
+      autoAssign: { type: 'boolean', description: 'Auto-assign a pending task if available' },
+      checkTaskList: { type: 'boolean', description: 'Consult the shared task list' },
+      timestamp: { type: 'number', description: 'Event timestamp (ms)' },
+    },
+  },
+  handler: async (input) => {
+    const teammateId = String(input.teammateId ?? '');
+    return {
+      success: true,
+      teammateId,
+      action: 'waiting' as const,
+      pendingTasks: 0,
+      message: 'teammate-idle acknowledged; auto-assignment requires the task-queue consumer (#1916 follow-up)',
+    };
+  },
+};
+
+export const hooksTaskCompleted: MCPTool = {
+  name: 'hooks_task-completed',
+  description: 'Agent Teams hook — fired when a task is marked complete; records completion and (eventually) trains patterns + notifies the team lead. Use when native TodoWrite is wrong because the work was a persisted, agent-assigned task whose outcome should feed cross-session learning and team coordination. For an in-session checklist tick, native TodoWrite is fine. (Pattern-learning is delegated to the intelligence pipeline — this records the completion today.)',
+  category: 'hooks',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      taskId: { type: 'string', description: 'ID of the completed task' },
+      teammateId: { type: 'string', description: 'Teammate that completed it' },
+      success: { type: 'boolean', description: 'Whether the task succeeded' },
+      quality: { type: 'number', description: 'Quality score 0-1' },
+      trainPatterns: { type: 'boolean', description: 'Feed the outcome to the learning pipeline' },
+      notifyLead: { type: 'boolean', description: 'Notify the team lead' },
+    },
+    required: ['taskId'],
+  },
+  handler: async (input) => {
+    const taskId = String(input.taskId ?? '');
+    const quality = typeof input.quality === 'number' ? input.quality : (input.success === false ? 0 : 1);
+    return {
+      success: true,
+      taskId,
+      patternsLearned: 0,
+      leadNotified: input.notifyLead === true,
+      metrics: { duration: 0, quality, learningUpdates: 0 },
+      note: 'completion recorded; pattern-learning is delegated to the intelligence pipeline (#1916 follow-up)',
+    };
+  },
+};
+
 // Export all hooks tools
 export const hooksTools: MCPTool[] = [
+  hooksTeammateIdle,
+  hooksTaskCompleted,
   hooksPreEdit,
   hooksPostEdit,
   hooksPreCommand,

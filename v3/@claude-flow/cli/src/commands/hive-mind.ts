@@ -274,7 +274,12 @@ async function spawnClaudeCodeInstance(
         }
       }
       if (mcpConfigPath) {
-        claudeArgs.push('--mcp-config', mcpConfigPath);
+        // #1780 — Claude Code's `--mcp-config` is variadic; passing it as two
+        // argv tokens (`--mcp-config`, `<path>`) lets a later positional (the
+        // hive-mind prompt) be slurped as a second config file, producing
+        // `ENAMETOOLONG: name too long, open` once the prompt exceeds PATH_MAX.
+        // Use `=`-syntax so the flag stays attached to its single value.
+        claudeArgs.push(`--mcp-config=${mcpConfigPath}`);
         output.printInfo(`Spawned worker MCP config: ${mcpConfigPath}`);
       } else {
         output.printWarning('No .mcp.json or ~/.claude.json found — spawned worker will not have mcp__ruflo__* tools (#1748 Issue 2). Pass --mcp-config <path> or run "ruflo init" to generate one.');
@@ -986,19 +991,33 @@ const taskCommand: Command = {
     output.printInfo('Submitting task to hive...');
 
     try {
+      // #1791.1 — `hive-mind_task` was never registered in the bundled MCP
+      // server (the `mcp__ruflo__hive-mind_*` surface only exposes init,
+      // spawn, status, broadcast, consensus, memory, shutdown, leave). The
+      // CLI was dispatching to a tool that doesn't exist, producing
+      // `MCP tool not found: hive-mind_task` and aborting.
+      //
+      // Re-route to the existing `task_create` tool. Hive-specific options
+      // (consensus requirement, timeout) are preserved as tags so a future
+      // hive-mind worker / consensus tool can pick them up — the data is
+      // not lost just because the dedicated hive-mind tool isn't there yet.
+      const consensusTag = `consensus:${requireConsensus ? 'required' : 'none'}`;
+      const timeoutTag = `timeout:${timeout}s`;
+
       const result = await callMCPTool<{
         taskId: string;
+        type: string;
         description: string;
+        priority: string;
         status: string;
         assignedTo: string[];
-        priority: string;
-        requiresConsensus: boolean;
-        estimatedTime: string;
-      }>('hive-mind_task', {
+        tags: string[];
+        createdAt: string;
+      }>('task_create', {
+        type: 'hive-mind',
         description,
         priority,
-        requireConsensus,
-        timeout,
+        tags: ['hive-mind', consensusTag, timeoutTag],
       });
 
       if (ctx.flags.format === 'json') {
@@ -1012,9 +1031,10 @@ const taskCommand: Command = {
           `Task ID: ${result.taskId}`,
           `Status: ${formatAgentStatus(result.status)}`,
           `Priority: ${formatPriority(priority)}`,
-          `Assigned: ${result.assignedTo.join(', ')}`,
-          `Consensus: ${result.requiresConsensus ? 'Yes' : 'No'}`,
-          `Est. Time: ${result.estimatedTime}`
+          `Assigned: ${result.assignedTo.length > 0 ? result.assignedTo.join(', ') : 'pending dispatch'}`,
+          `Consensus: ${requireConsensus ? 'Yes' : 'No'}`,
+          `Timeout: ${timeout}s`,
+          `Tags: ${result.tags.join(', ')}`
         ].join('\n'),
         'Task Submitted'
       );

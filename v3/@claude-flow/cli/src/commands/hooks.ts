@@ -11,6 +11,17 @@ import { storeCommand } from './transfer-store.js';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
+/**
+ * #1686 — `?? 0` only defaults null/undefined; NaN slips through and
+ * surfaces as `"NaN"` (or earlier crashed `.toFixed`) in the metrics
+ * dashboard and pretrain output. Coerce to a finite number, fall back
+ * to `fallback` when the input is null/undefined/non-numeric/NaN/Infinity.
+ */
+function safeNum(value: unknown, fallback = 0): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 // ============================================================================
 // Coverage Data Reader - reads Jest/Istanbul coverage files from disk
 // ============================================================================
@@ -288,7 +299,7 @@ const preEditCommand: Command = {
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
     // Default file to 'unknown' for backward compatibility (env var may be empty)
-    const filePath = ctx.args[0] || ctx.flags.file as string || 'unknown';
+    const filePath = (ctx.flags.file as string) || ctx.args[0] || 'unknown';
     const operation = ctx.flags.operation as string || 'update';
 
     output.printInfo(`Analyzing context for: ${output.highlight(filePath)}`);
@@ -417,7 +428,7 @@ const postEditCommand: Command = {
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
     // Default file to 'unknown' for backward compatibility (env var may be empty)
-    const filePath = ctx.args[0] || ctx.flags.file as string || 'unknown';
+    const filePath = (ctx.flags.file as string) || ctx.args[0] || 'unknown';
     // Default success to true for backward compatibility (PostToolUse = success, PostToolUseFailure = failure)
     const success = ctx.flags.success !== undefined ? (ctx.flags.success as boolean) : true;
 
@@ -516,7 +527,7 @@ const preCommandCommand: Command = {
     { command: 'claude-flow hooks pre-command -c "npm install lodash"', description: 'Check package install' }
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
-    const command = ctx.args[0] || ctx.flags.command as string;
+    const command = (ctx.flags.command as string) || ctx.args[0];
 
     if (!command) {
       output.printError('Command is required. Use --command or -c flag.');
@@ -645,7 +656,7 @@ const postCommandCommand: Command = {
     { command: 'claude-flow hooks post-command -c "npm build" --success false -e 1', description: 'Record failed build' }
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
-    const command = ctx.args[0] || ctx.flags.command as string;
+    const command = (ctx.flags.command as string) || ctx.args[0];
     // Default success to true for backward compatibility
     const success = ctx.flags.success !== undefined ? (ctx.flags.success as boolean) : true;
 
@@ -731,7 +742,7 @@ const routeCommand: Command = {
     { command: 'claude-flow hooks route -t "Optimize database queries" -K 5', description: 'Get top 5 suggestions' }
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
-    const task = ctx.args[0] || ctx.flags.task as string;
+    const task = (ctx.flags.task as string) || ctx.args[0];
     const topK = ctx.flags.topK as number || 3;
 
     if (!task) {
@@ -883,7 +894,7 @@ const explainCommand: Command = {
     { command: 'claude-flow hooks explain -t "Optimize queries" -a coder --verbose', description: 'Verbose explanation for specific agent' }
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
-    const task = ctx.args[0] || ctx.flags.task as string;
+    const task = (ctx.flags.task as string) || ctx.args[0];
 
     if (!task) {
       output.printError('Task description is required. Use --task or -t flag.');
@@ -1113,8 +1124,10 @@ const pretrainCommand: Command = {
       spinner.succeed('Pretraining completed');
 
       // Normalize shape: prefer `statistics`, fall back to `stats` for older tools.
+      // #1686 — coerce duration through safeNum so a NaN from the underlying
+      // pretrain pipeline surfaces as `0.0s` rather than `NaNs`.
       const stats = (rawResult.statistics ?? rawResult.stats ?? {}) as Record<string, number | undefined>;
-      const durationMs = rawResult.duration ?? (rawResult.statistics?.executionTime as number | undefined) ?? 0;
+      const durationMs = safeNum(rawResult.duration ?? rawResult.statistics?.executionTime);
       const result = { ...rawResult, stats, duration: durationMs };
 
       if (ctx.flags.format === 'json') {
@@ -1375,20 +1388,21 @@ const metricsCommand: Command = {
       });
 
       // Normalize across both shapes; default every numeric to 0 so toFixed
-      // never sees null/undefined.
-      const totalPatterns = rawMetrics.patterns?.total ?? rawMetrics.summary?.patternsLearned ?? 0;
-      const successfulPatterns = rawMetrics.patterns?.successful ?? Math.round((rawMetrics.summary?.successRate ?? 0) * totalPatterns);
-      const failedPatterns = rawMetrics.patterns?.failed ?? Math.max(0, totalPatterns - successfulPatterns);
-      const avgConfidence = rawMetrics.patterns?.avgConfidence ?? rawMetrics.summary?.avgQuality ?? 0;
+      // never sees null/undefined. #1686 — also coerce NaN through `safeNum`
+      // because `?? 0` only catches null/undefined; an upstream NaN would
+      // still land in `.toFixed(...)` and surface as `"NaN"`.
+      const totalPatterns = safeNum(rawMetrics.patterns?.total ?? rawMetrics.summary?.patternsLearned);
+      const successfulPatterns = safeNum(rawMetrics.patterns?.successful ?? Math.round(safeNum(rawMetrics.summary?.successRate) * totalPatterns));
+      const failedPatterns = Math.max(0, safeNum(rawMetrics.patterns?.failed ?? totalPatterns - successfulPatterns));
+      const avgConfidence = safeNum(rawMetrics.patterns?.avgConfidence ?? rawMetrics.summary?.avgQuality);
 
-      const routingAccuracy = rawMetrics.agents?.routingAccuracy
-        ?? (rawMetrics.routing?.avgConfidence ?? 0);
-      const totalRoutes = rawMetrics.agents?.totalRoutes ?? rawMetrics.routing?.totalRoutes ?? 0;
+      const routingAccuracy = safeNum(rawMetrics.agents?.routingAccuracy ?? rawMetrics.routing?.avgConfidence);
+      const totalRoutes = safeNum(rawMetrics.agents?.totalRoutes ?? rawMetrics.routing?.totalRoutes);
       const topAgent = rawMetrics.agents?.topAgent ?? rawMetrics.routing?.topAgents?.[0]?.agent ?? 'n/a';
 
-      const totalCommands = rawMetrics.commands?.totalExecuted ?? rawMetrics.commands?.totalCommands ?? 0;
-      const commandSuccessRate = rawMetrics.commands?.successRate ?? 0;
-      const avgRiskScore = rawMetrics.commands?.avgRiskScore ?? rawMetrics.commands?.avgExecutionTime ?? 0;
+      const totalCommands = safeNum(rawMetrics.commands?.totalExecuted ?? rawMetrics.commands?.totalCommands);
+      const commandSuccessRate = safeNum(rawMetrics.commands?.successRate);
+      const avgRiskScore = safeNum(rawMetrics.commands?.avgRiskScore ?? rawMetrics.commands?.avgExecutionTime);
 
       const result = {
         ...rawMetrics,
@@ -1508,7 +1522,7 @@ const transferFromProjectCommand: Command = {
     { command: 'claude-flow hooks transfer from-project -s ../prod --filter security -m 0.9', description: 'Transfer high-confidence security patterns' }
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
-    const sourcePath = ctx.args[0] || ctx.flags.source as string;
+    const sourcePath = (ctx.flags.source as string) || ctx.args[0];
     const minConfidence = ctx.flags.minConfidence as number || 0.7;
 
     if (!sourcePath) {
@@ -1747,7 +1761,7 @@ const preTaskCommand: Command = {
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
     const taskId = (ctx.flags.taskId as string) || `task-${Date.now().toString(36)}`;
-    const description = ctx.args[0] || ctx.flags.description as string;
+    const description = (ctx.flags.description as string) || ctx.args[0];
 
     if (!description) {
       output.printError('Description is required: --description "your task"');
@@ -2089,7 +2103,7 @@ const sessionRestoreCommand: Command = {
     { command: 'claude-flow hooks session-restore -i session-12345', description: 'Restore specific session' }
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
-    const sessionId = ctx.args[0] || ctx.flags.sessionId as string || 'latest';
+    const sessionId = (ctx.flags.sessionId as string) || ctx.args[0] || 'latest';
 
     output.printInfo(`Restoring session: ${output.highlight(sessionId)}`);
 
@@ -3050,7 +3064,7 @@ const coverageRouteCommand: Command = {
     { command: 'claude-flow hooks coverage-route -t "add tests" --threshold 90', description: 'Route with custom threshold' }
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
-    const task = ctx.args[0] || ctx.flags.task as string;
+    const task = (ctx.flags.task as string) || ctx.args[0];
     const threshold = ctx.flags.threshold as number || 80;
     const useRuvector = !ctx.flags['no-ruvector'];
 
@@ -3322,7 +3336,7 @@ const coverageSuggestCommand: Command = {
     { command: 'claude-flow hooks coverage-suggest -p src/services --threshold 90', description: 'Stricter threshold' }
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
-    const targetPath = ctx.args[0] || ctx.flags.path as string;
+    const targetPath = (ctx.flags.path as string) || ctx.args[0];
     const threshold = ctx.flags.threshold as number || 80;
     const limit = ctx.flags.limit as number || 20;
 
@@ -3999,7 +4013,13 @@ const statuslineCommand: Command = {
     },
     {
       name: 'compact',
-      description: 'Compact single-line output',
+      description: 'Compact single-line output (auto-enabled when terminal width < 100 cols)',
+      type: 'boolean',
+      default: false
+    },
+    {
+      name: 'full',
+      description: 'Force the full multi-line output even on narrow terminals',
       type: 'boolean',
       default: false
     },
@@ -4238,8 +4258,16 @@ const statuslineCommand: Command = {
       return { success: true, data: statusData };
     }
 
-    // Compact output
-    if (ctx.flags.compact) {
+    // #1153: auto-collapse to compact on narrow terminals so the full
+    // 6+ line statusline doesn't dominate the screen. Honors:
+    //   - explicit --compact → compact
+    //   - explicit --full    → full (overrides auto-detection)
+    //   - else                → compact when terminal < 100 cols (full multi-line
+    //                            output expects ~100 cols of horizontal space)
+    const COMPACT_WIDTH_THRESHOLD = 100;
+    const terminalCols = process.stdout.columns ?? 80;
+    const autoCompact = !ctx.flags.full && terminalCols < COMPACT_WIDTH_THRESHOLD;
+    if (ctx.flags.compact || autoCompact) {
       const line = `DDD:${progress.domainsCompleted}/${progress.totalDomains} CVE:${security.cvesFixed}/${security.totalCves} Swarm:${swarm.activeAgents}/${swarm.maxAgents} Ctx:${system.contextPct}% Int:${system.intelligencePct}%`;
       output.writeln(line);
       return { success: true, data: statusData };
@@ -4699,7 +4727,7 @@ const modelRouteCommand: Command = {
     { command: 'claude-flow hooks model-route -t "architect auth system"', description: 'Route complex task (likely opus)' },
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
-    const task = ctx.args[0] || ctx.flags.task as string;
+    const task = (ctx.flags.task as string) || ctx.args[0];
     if (!task) {
       output.printError('Task description required. Use --task or -t flag.');
       return { success: false, exitCode: 1 };
@@ -5062,7 +5090,7 @@ const taskCompletedCommand: Command = {
     { command: 'claude-flow hooks task-completed -i task-456 --notify-lead --quality 0.95', description: 'Complete with quality score' }
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
-    const taskId = ctx.args[0] || ctx.flags.taskId as string;
+    const taskId = (ctx.flags.taskId as string) || ctx.args[0];
     const trainPatterns = ctx.flags.trainPatterns !== false;
     const notifyLead = ctx.flags.notifyLead !== false;
     const success = ctx.flags.success !== false;
@@ -5161,7 +5189,7 @@ const notifyCommand: Command = {
     { command: 'claude-flow hooks notify -m "Test failed" -l error', description: 'Send error notification' },
   ],
   action: async (ctx: CommandContext): Promise<CommandResult> => {
-    const message = ctx.args[0] || ctx.flags.message as string;
+    const message = (ctx.flags.message as string) || ctx.args[0];
     const level = (ctx.flags.level as string) || 'info';
 
     if (!message) {

@@ -84,7 +84,27 @@ async function getAIDefence(): Promise<AIDefenceInstance> {
     throw new Error('AIDefence package not available. Install with: npm install @claude-flow/aidefence');
   }
 
-  // Retry with ESM cache busting via file:// URL + timestamp
+  // #1807 — auto-install lands the package somewhere Node's standard
+  // resolver couldn't find on the FIRST attempt (npm-global installs are
+  // a common offender). Try Node's resolver again first (it may have
+  // picked up the new node_modules directory), then fall back to the
+  // file:// + cache-bust import dance, then surface a clearly actionable
+  // error if everything still fails.
+  // Plain re-import (covers project-local installs that landed where Node
+  // looks). This often succeeds where the first attempt failed because
+  // the module cache is stable across the await boundary.
+  try {
+    const aidefence = await import(packageName);
+    const instance = aidefence.createAIDefence({ enableLearning: true });
+    if (instance) {
+      aidefenceInstance = instance;
+      console.error(`[claude-flow] ${packageName} loaded after install (resolver path)`);
+      return instance;
+    }
+  } catch { /* fall through to file:// attempt */ }
+
+  // file:// + cache-bust attempt (covers globally-installed packages whose
+  // path the standard resolver missed but require.resolve can locate).
   try {
     const modulePath = require.resolve(packageName);
     const cacheBust = `?t=${Date.now()}`;
@@ -94,10 +114,17 @@ async function getAIDefence(): Promise<AIDefenceInstance> {
       throw new Error('createAIDefence returned null after install');
     }
     aidefenceInstance = instance;
-    console.error(`[claude-flow] ${packageName} loaded successfully after install`);
+    console.error(`[claude-flow] ${packageName} loaded after install (file:// path)`);
     return instance;
   } catch (retryError) {
-    throw new Error(`AIDefence installed but failed to load: ${retryError}. Try restarting the MCP server.`);
+    throw new Error(
+      `AIDefence installed but failed to load: ${retryError}.\n` +
+      `This usually means npm installed the package somewhere Node's module resolver doesn't search ` +
+      `(common with global installs of \`claude-flow\`). Recovery options:\n` +
+      `  1. Run \`npm install --save @claude-flow/aidefence\` in your project's working directory.\n` +
+      `  2. Or run \`npx ruflo@latest mcp start\` from a directory whose node_modules contains the package.\n` +
+      `  3. Or restart the MCP server after the install completes.`
+    );
   }
 }
 
@@ -106,7 +133,7 @@ async function getAIDefence(): Promise<AIDefenceInstance> {
  */
 const aidefenceScanTool: MCPTool = {
   name: 'aidefence_scan',
-  description: 'Scan input text for AI manipulation threats (prompt injection, jailbreaks, PII). Returns threat assessment with <10ms latency.',
+  description: 'Scan input text for AI manipulation threats (prompt injection, jailbreaks, PII). Returns threat assessment with <10ms latency. Use when nothing native exists — Claude Code does not have a PII / prompt-injection / adversarial-text scanner. Pair with any tool that ingests untrusted input (browser scrape, federation envelope, memory_import_claude).',
   inputSchema: {
     type: 'object',
     properties: {
@@ -189,7 +216,7 @@ const aidefenceScanTool: MCPTool = {
  */
 const aidefenceAnalyzeTool: MCPTool = {
   name: 'aidefence_analyze',
-  description: 'Deep analysis of input for specific threat types with similar pattern search and mitigation recommendations.',
+  description: 'Deep analysis of input for specific threat types with similar pattern search and mitigation recommendations. Use when nothing native exists — Claude Code does not have a PII / prompt-injection / adversarial-text scanner. Pair with any tool that ingests untrusted input (browser scrape, federation envelope, memory_import_claude).',
   inputSchema: {
     type: 'object',
     properties: {
@@ -275,7 +302,7 @@ const aidefenceAnalyzeTool: MCPTool = {
  */
 const aidefenceStatsTool: MCPTool = {
   name: 'aidefence_stats',
-  description: 'Get AIDefence detection and learning statistics.',
+  description: 'Get AIDefence detection and learning statistics. Use when nothing native exists — Claude Code does not have a PII / prompt-injection / adversarial-text scanner. Pair with any tool that ingests untrusted input (browser scrape, federation envelope, memory_import_claude).',
   inputSchema: {
     type: 'object',
     properties: {},
@@ -327,7 +354,7 @@ const aidefenceStatsTool: MCPTool = {
  */
 const aidefenceLearnTool: MCPTool = {
   name: 'aidefence_learn',
-  description: 'Record detection feedback for pattern learning. Improves future detection accuracy.',
+  description: 'Record detection feedback for pattern learning. Improves future detection accuracy. Use when nothing native exists — Claude Code does not have a PII / prompt-injection / adversarial-text scanner. Pair with any tool that ingests untrusted input (browser scrape, federation envelope, memory_import_claude).',
   inputSchema: {
     type: 'object',
     properties: {
@@ -422,7 +449,7 @@ const aidefenceLearnTool: MCPTool = {
  */
 const aidefenceIsSafeTool: MCPTool = {
   name: 'aidefence_is_safe',
-  description: 'Quick boolean check if input is safe. Fastest option for simple validation.',
+  description: 'Quick boolean check if input is safe. Fastest option for simple validation. Use when nothing native exists — Claude Code does not have a PII / prompt-injection / adversarial-text scanner. Pair with any tool that ingests untrusted input (browser scrape, federation envelope, memory_import_claude).',
   inputSchema: {
     type: 'object',
     properties: {
@@ -477,7 +504,7 @@ const aidefenceIsSafeTool: MCPTool = {
  */
 const aidefenceHasPIITool: MCPTool = {
   name: 'aidefence_has_pii',
-  description: 'Check if input contains PII (emails, SSNs, API keys, passwords, etc.).',
+  description: 'Check if input contains PII (emails, SSNs, API keys, passwords, etc.). Use when nothing native exists — Claude Code does not have a PII / prompt-injection / adversarial-text scanner. Pair with any tool that ingests untrusted input (browser scrape, federation envelope, memory_import_claude).',
   inputSchema: {
     type: 'object',
     properties: {

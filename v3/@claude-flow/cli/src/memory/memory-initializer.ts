@@ -13,6 +13,63 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { readFileMaybeEncrypted, writeFileRestricted } from '../fs-secure.js';
 
+/**
+ * #1854: previously every site that needed the memory directory hardcoded
+ * `getMemoryRoot()`, so the documented config entry
+ * points (`memory.persistPath` config field, `memory configure --path`,
+ * `CLAUDE_FLOW_MEMORY_PATH` env var) all silently no-op'd. This helper
+ * is the single source of truth — every `.swarm/memory.db` resolution in
+ * this file flows through it.
+ *
+ * Precedence (highest → lowest):
+ *   1. CLAUDE_FLOW_MEMORY_PATH env var
+ *   2. memory.persistPath / memory.path in claude-flow.config.json (cwd or
+ *      the directory the CLI was invoked from)
+ *   3. Default: cwd/.swarm
+ *
+ * Cached per-process so repeated lookups are cheap; reset only by spawning
+ * a fresh process (which is how config changes already propagate).
+ */
+let _memoryRootCache: string | undefined;
+export function getMemoryRoot(): string {
+  if (_memoryRootCache !== undefined) return _memoryRootCache;
+
+  // 1. Env var
+  const envPath = process.env.CLAUDE_FLOW_MEMORY_PATH;
+  if (envPath && envPath.trim().length > 0) {
+    _memoryRootCache = path.resolve(envPath);
+    return _memoryRootCache;
+  }
+
+  // 2. Config file (claude-flow.config.json)
+  const configCandidates = [
+    path.resolve(process.cwd(), 'claude-flow.config.json'),
+    path.resolve(process.cwd(), '.claude-flow', 'config.json'),
+  ];
+  for (const configPath of configCandidates) {
+    if (!fs.existsSync(configPath)) continue;
+    try {
+      const raw = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      const fromConfig: unknown = raw?.memory?.persistPath ?? raw?.memory?.path;
+      if (typeof fromConfig === 'string' && fromConfig.trim().length > 0) {
+        _memoryRootCache = path.resolve(fromConfig);
+        return _memoryRootCache;
+      }
+    } catch {
+      /* malformed config — fall through to default */
+    }
+  }
+
+  // 3. Default
+  _memoryRootCache = path.resolve(process.cwd(), '.swarm');
+  return _memoryRootCache;
+}
+
+/** For tests + the `memory configure` flow that mutates the config at runtime. */
+export function _resetMemoryRootCache(): void {
+  _memoryRootCache = undefined;
+}
+
 // ADR-053: Lazy import of AgentDB v3 bridge
 let _bridge: typeof import('./memory-bridge.js') | null | undefined;
 async function getBridge(): Promise<typeof import('./memory-bridge.js') | null> {
@@ -390,7 +447,7 @@ export async function getHNSWIndex(options?: {
     const { VectorDb } = ruvectorCore;
 
     // Persistent storage paths — resolve to absolute to survive CWD changes
-    const swarmDir = path.resolve(process.cwd(), '.swarm');
+    const swarmDir = getMemoryRoot();
     if (!fs.existsSync(swarmDir)) {
       fs.mkdirSync(swarmDir, { recursive: true });
     }
@@ -499,7 +556,7 @@ function saveHNSWMetadata(): void {
   if (!hnswIndex?.entries) return;
 
   try {
-    const swarmDir = path.join(process.cwd(), '.swarm');
+    const swarmDir = getMemoryRoot();
     const metadataPath = path.join(swarmDir, 'hnsw.metadata.json');
     const metadata = Array.from(hnswIndex.entries.entries());
     fs.writeFileSync(metadataPath, JSON.stringify(metadata));
@@ -928,10 +985,13 @@ INSERT OR REPLACE INTO metadata (key, value) VALUES
   ('temporal_decay', 'enabled'),
   ('hnsw_indexing', 'enabled');
 
--- Create default vector index configuration
+-- Create default vector index configuration. Dimension matches the default
+-- ONNX embedding model (Xenova/all-MiniLM-L6-v2, 384-dim); HNSW rejects
+-- inserts whose dim does not match this row, so a 768 here breaks every
+-- memory_store --vector and memory_search on a fresh install (#1947).
 INSERT OR IGNORE INTO vector_indexes (id, name, dimensions) VALUES
-  ('default', 'default', 768),
-  ('patterns', 'patterns', 768);
+  ('default', 'default', 384),
+  ('patterns', 'patterns', 384);
 `;
 }
 
@@ -940,6 +1000,11 @@ INSERT OR IGNORE INTO vector_indexes (id, name, dimensions) VALUES
  */
 export interface MemoryInitResult {
   success: boolean;
+  /**
+   * #1791.6 — set when an existing database was found and `force` was not
+   * passed. The call is treated as a successful no-op rather than an error.
+   */
+  alreadyExists?: boolean;
   backend: string;
   dbPath: string;
   schemaVersion: string;
@@ -1167,7 +1232,7 @@ export async function initializeMemoryDatabase(options: {
     migrate = true
   } = options;
 
-  const swarmDir = path.join(process.cwd(), '.swarm');
+  const swarmDir = getMemoryRoot();
   const dbPath = customPath || path.join(swarmDir, 'memory.db');
   const dbDir = path.dirname(dbPath);
 
@@ -1186,9 +1251,16 @@ export async function initializeMemoryDatabase(options: {
     }
 
     // Check existing database
+    // #1791.6 — Idempotent re-init: if the database already exists and the
+    // caller did not pass --force, treat it as a successful no-op instead of
+    // an error. Callers (CLI, MCP tools, embeddings) can branch on
+    // `alreadyExists` if they want a different message; previous behavior
+    // surfaced an `[ERROR]` and a "Initialization failed" spinner even when
+    // the existing DB was perfectly healthy.
     if (fs.existsSync(dbPath) && !force) {
       return {
-        success: false,
+        success: true,
+        alreadyExists: true,
         backend,
         dbPath,
         schemaVersion: '3.0.0',
@@ -1200,8 +1272,7 @@ export async function initializeMemoryDatabase(options: {
           temporalDecay: false,
           hnswIndexing: false,
           migrationTracking: false
-        },
-        error: 'Database already exists. Use --force to reinitialize.'
+        }
       };
     }
 
@@ -1375,7 +1446,7 @@ export async function checkMemoryInitialization(dbPath?: string): Promise<{
   };
   tables?: string[];
 }> {
-  const swarmDir = path.join(process.cwd(), '.swarm');
+  const swarmDir = getMemoryRoot();
   const path_ = dbPath || path.join(swarmDir, 'memory.db');
 
   if (!fs.existsSync(path_)) {
@@ -1435,7 +1506,7 @@ export async function applyTemporalDecay(dbPath?: string): Promise<{
   patternsDecayed: number;
   error?: string;
 }> {
-  const swarmDir = path.join(process.cwd(), '.swarm');
+  const swarmDir = getMemoryRoot();
   const path_ = dbPath || path.join(swarmDir, 'memory.db');
 
   try {
@@ -2091,7 +2162,7 @@ export async function storeEntry(options: {
     upsert = false
   } = options;
 
-  const swarmDir = path.resolve(process.cwd(), '.swarm');
+  const swarmDir = getMemoryRoot();
   const dbPath = customPath ? path.resolve(customPath) : path.join(swarmDir, 'memory.db');
 
   try {
@@ -2122,6 +2193,18 @@ export async function storeEntry(options: {
       embeddingDimensions = embResult.dimensions;
       embeddingModel = embResult.model;
     }
+
+    // #1941: provision a `vector_indexes` row for this namespace before the
+    // entry insert. The HNSW lookup uses this table to find which namespaces
+    // are indexed — without a row, `memory_search({namespace:"X"})` returns
+    // 0 even when memory_entries holds matching rows. INSERT OR IGNORE
+    // preserves the existing `default` / `patterns` rows.
+    try {
+      db.run(
+        `INSERT OR IGNORE INTO vector_indexes (id, name, dimensions) VALUES (?, ?, ?)`,
+        [namespace, namespace, embeddingDimensions ?? 384]
+      );
+    } catch { /* vector_indexes may not exist on legacy DBs — fall through */ }
 
     // Insert or update entry (upsert mode uses REPLACE)
     const insertSql = upsert
@@ -2220,7 +2303,7 @@ export async function searchEntries(options: {
   } = options;
   const effectiveNamespace = namespace || 'all';
 
-  const swarmDir = path.resolve(process.cwd(), '.swarm');
+  const swarmDir = getMemoryRoot();
   const dbPath = customPath ? path.resolve(customPath) : path.join(swarmDir, 'memory.db');
   const startTime = Date.now();
 
@@ -2437,7 +2520,7 @@ export async function listEntries(options: {
     dbPath: customPath
   } = options;
 
-  const swarmDir = path.join(process.cwd(), '.swarm');
+  const swarmDir = getMemoryRoot();
   const dbPath = customPath || path.join(swarmDir, 'memory.db');
 
   try {
@@ -2565,7 +2648,7 @@ export async function getEntry(options: {
     dbPath: customPath
   } = options;
 
-  const swarmDir = path.join(process.cwd(), '.swarm');
+  const swarmDir = getMemoryRoot();
   const dbPath = customPath || path.join(swarmDir, 'memory.db');
 
   try {
@@ -2699,7 +2782,7 @@ export async function deleteEntry(options: {
     dbPath: customPath
   } = options;
 
-  const swarmDir = path.join(process.cwd(), '.swarm');
+  const swarmDir = getMemoryRoot();
   const dbPath = customPath || path.join(swarmDir, 'memory.db');
 
   try {
